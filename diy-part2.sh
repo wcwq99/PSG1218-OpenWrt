@@ -18,11 +18,15 @@ chmod +x files/usr/bin/frpc 2>/dev/null || true
 
 # Patch frpc 包:跳过 17MB Go 二进制安装,改用内存拉取 wrapper
 # 保留 init/config/uci-defaults 让 luci-app-frpc 正常工作,二进制走 /tmp
+# 注意:Makefile 第28行是单美元 $(...) 而非双美元,因为在 define Package/frp/install 内直接展开
 FRP_MK=feeds/packages/net/frp/Makefile
 if [ -f "$FRP_MK" ]; then
-    # 注释掉二进制安装行,保留其余(init/config/uci-defaults)
-    sed -i 's|^\t$(INSTALL_BIN) \$$(GO_PKG_BUILD_BIN_DIR)/\$$(2) \$$(1)/usr/bin/|\t# \\t disabled: 17MB Go binary, use /tmp wrapper instead|' "$FRP_MK"
-    echo "[diy-part2] patched frp Makefile: skip binary install, use wrapper"
+    # 注释掉二进制安装行(第28行),保留其余(init/config/uci-defaults)
+    # 真实行: \t$(INSTALL_BIN) $(GO_PKG_BUILD_BIN_DIR)/$(2) $(1)/usr/bin/
+    sed -i 's|^\t$(INSTALL_BIN) $(GO_PKG_BUILD_BIN_DIR)/$(2) $(1)/usr/bin/|\t# disabled: 17MB Go binary, use /tmp wrapper instead|' "$FRP_MK"
+    grep -q "use /tmp wrapper instead" "$FRP_MK" \
+        && echo "[diy-part2] patched frp Makefile: skip binary install, use wrapper" \
+        || echo "[diy-part2] WARNING: frp Makefile patch NOT applied, check pattern!"
 fi
 
 # Modify default IP

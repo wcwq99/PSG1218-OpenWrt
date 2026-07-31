@@ -38,7 +38,7 @@ jobs:
           # vmess+ws + http + socks need none of the optional tags.
           export CGO_ENABLED=0
           export GOOS=linux
-          export GOARCH=mips
+          export GOARCH=mipsle
           export GOMIPS=softfloat
           go build -trimpath \
             -tags "badlinkname,tfogo_checklinkname0" \

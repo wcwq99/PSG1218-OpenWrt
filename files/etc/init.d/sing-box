@@ -34,7 +34,7 @@ download_sb() {
     for proxy in $SB_PROXIES; do
         url="${proxy}${SB_BASE_URL}"
         echo "  尝试: $url"
-        if wget-ssl -q -T 30 -O "$SB_BIN" "$url" 2>/dev/null && [ -s "$SB_BIN" ]; then
+        if wget -q -T 30 -O "$SB_BIN" "$url" 2>/dev/null && [ -s "$SB_BIN" ]; then
             chmod +x "$SB_BIN"
             echo "sing-box 下载成功: $SB_BIN ($(wc -c < "$SB_BIN") 字节),经由 ${proxy}"
             return 0
@@ -44,7 +44,7 @@ download_sb() {
 
     # 直连回退(无代理)
     echo "  尝试直连: $SB_BASE_URL"
-    if wget-ssl -q -T 30 -O "$SB_BIN" "$SB_BASE_URL" 2>/dev/null && [ -s "$SB_BIN" ]; then
+    if wget -q -T 30 -O "$SB_BIN" "$SB_BASE_URL" 2>/dev/null && [ -s "$SB_BIN" ]; then
         chmod +x "$SB_BIN"
         echo "sing-box 下载成功: $SB_BIN ($(wc -c < "$SB_BIN") 字节),经由直连"
         return 0
@@ -80,5 +80,6 @@ reload_service() {
 }
 
 service_triggers() {
-    procd_add_config_trigger "config.change" "sing-box" /etc/init.d/sing-box reload
+    # WAN 起来后触发 reload,解决开机时网络未就绪导致下载失败
+    procd_add_interface_trigger "interface.*.up" "wan" /etc/init.d/sing-box reload
 }

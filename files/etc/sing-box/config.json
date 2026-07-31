@@ -13,12 +13,12 @@
       "users": [
         {
           "name": "user1",
-          "uuid": "REPLACE-WITH-YOUR-UUID"
+          "uuid": "810f2ab6-3d8c-4ceb-b68e-7fcbb67b4f4a"
         }
       ],
       "transport": {
         "type": "ws",
-        "path": "/REPLACE-PATH"
+        "path": "/k2ws"
       }
     },
     {
@@ -28,8 +28,8 @@
       "listen_port": 10809,
       "users": [
         {
-          "username": "REPLACE-USER",
-          "password": "REPLACE-PASS"
+          "username": "k2user",
+          "password": "changeme123"
         }
       ]
     },
@@ -40,8 +40,8 @@
       "listen_port": 10808,
       "users": [
         {
-          "username": "REPLACE-USER",
-          "password": "REPLACE-PASS"
+          "username": "k2user",
+          "password": "changeme123"
         }
       ]
     }

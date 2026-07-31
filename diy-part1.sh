@@ -10,8 +10,7 @@
 # Description: OpenWrt DIY script part 1 (Before Update feeds)
 #
 
-# Add Argon theme feed (theme body not in lede, pull from jerrykuku)
-echo 'src-git argon_theme https://github.com/jerrykuku/luci-theme-argon' >> feeds.conf.default
+# Argon 主题与配置工具已由 lede luci feed 内置(themes/luci-theme-argon + applications/luci-app-argon-config),无需外加 feed
 
 # Add a feed source
 #echo 'src-git helloworld https://github.com/fw876/helloworld' >> feeds.conf.default

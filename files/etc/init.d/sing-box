@@ -81,5 +81,8 @@ reload_service() {
 
 service_triggers() {
     # WAN 起来后触发 reload,解决开机时网络未就绪导致下载失败
-    procd_add_interface_trigger "interface.*.up" "wan" /etc/init.d/sing-box reload
+    # procd_add_interface_trigger <object-filter> <interface> <script> <action>
+    # object-filter 必须是 "interface.*"(匹配 ubus network.interface.* 对象),
+    # 不能带 .up 后缀(那不是合法 ubus object,trigger 永不触发)
+    procd_add_interface_trigger "interface.*" "wan" /etc/init.d/sing-box reload
 }

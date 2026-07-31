@@ -62,14 +62,22 @@ check_env() {
         Y "缺少命令: ${missing[*]},自动安装..."
     fi
 
-    # 安装编译依赖(同 build-k2.yml)
+    # 安装编译依赖(同 build-k2.yml,适配 Ubuntu 24.04 / Python 3.12+)
     B "  安装编译依赖(需 sudo)..."
     sudo -E apt-get -qq update
     sudo -E apt-get -qq install -y build-essential clang flex bison gperf gawk \
         git-lfs libelf-dev libssl-dev libncurses-dev autoconf automake \
-        jq rsync unzip wget zip zlib1g-dev python3 python3-distutils \
-        ecj fastjar java-propose-classpath 2>/dev/null || true
+        jq rsync unzip wget zip zlib1g-dev python3 python3-setuptools \
+        python3-venv file 2>/dev/null || true
     sudo -E apt-get -qq autoremove --purge 2>/dev/null || true
+
+    # Ubuntu 24.04 / Python 3.12+ 移除了 distutils,旧 LEDE 构建脚本仍依赖它
+    # 装 setuptools 提供 distutils 兼容层,并设环境变量让旧脚本找到
+    if ! python3 -c "import distutils" 2>/dev/null; then
+        Y "  Python distutils 缺失,安装 setuptools 兼容层..."
+        pip3 install --user setuptools 2>/dev/null || true
+    fi
+    export SETUPTOOLS_USE_DISTUTILS=local
     G "✓ 依赖安装完成"
 }
 

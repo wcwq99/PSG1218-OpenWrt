@@ -1,0 +1,58 @@
+{
+  "log": {
+    "level": "warn",
+    "timestamp": true
+  },
+  "inbounds": [
+    {
+      "type": "vmess",
+      "tag": "vmess-ws",
+      "listen": "0.0.0.0",
+      "listen_port": 10086,
+      "users": [
+        {
+          "name": "user1",
+          "uuid": "REPLACE-WITH-YOUR-UUID"
+        }
+      ],
+      "transport": {
+        "type": "ws",
+        "path": "/REPLACE-PATH"
+      }
+    },
+    {
+      "type": "http",
+      "tag": "http-in",
+      "listen": "0.0.0.0",
+      "listen_port": 10809,
+      "users": [
+        {
+          "username": "REPLACE-USER",
+          "password": "REPLACE-PASS"
+        }
+      ]
+    },
+    {
+      "type": "socks",
+      "tag": "socks-in",
+      "listen": "0.0.0.0",
+      "listen_port": 10808,
+      "users": [
+        {
+          "username": "REPLACE-USER",
+          "password": "REPLACE-PASS"
+        }
+      ]
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+name: Build sing-box (mipsle, trimmed, upx)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'sing-box version (e.g. 1.13.15)'
+        required: true
+        default: '1.13.15'
+
+env:
+  GO_VERSION: '1.23'
+  UPX_VERSION: '4.2.4'
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Checkout sing-box source
+        run: |
+          git clone --depth 1 --branch v${{ inputs.version }} https://github.com/SagerNet/sing-box.git sb
+          cd sb
+          echo "TAG=$(git describe --tags)" >> $GITHUB_ENV
+
+      - name: Build mipsle (trimmed, no optional tags)
+        run: |
+          cd sb
+          # Keep only mandatory tags (badlinkname + tfogo_checklinkname0) for Go 1.23+ linker.
+          # Drop with_gvisor/quic/wireguard/tailscale/utls/acme/clash_api etc -> minimal binary.
+          # vmess+ws + http + socks need none of the optional tags.
+          export CGO_ENABLED=0
+          export GOOS=linux
+          export GOARCH=mips
+          export GOMIPS=softfloat
+          go build -trimpath \
+            -tags "badlinkname,tfogo_checklinkname0" \
+            -ldflags "-s -w -X github.com/sagernet/sing-box/constant.Version=v${{ inputs.version }} -checklinkname=0" \
+            -o sing-box-mipsle ./cmd/sing-box
+          file sing-box-mipsle
+          ls -la sing-box-mipsle
+          echo "Raw size: $(stat -c%s sing-box-mipsle) bytes"
+
+      - name: Compress with upx
+        run: |
+          cd sb
+          wget -q https://github.com/upx/upx/releases/download/v${UPX_VERSION}/upx-${UPX_VERSION}-amd64_linux.tar.xz
+          tar xf upx-${UPX_VERSION}-amd64_linux.tar.xz
+          ./upx-${UPX_VERSION}-amd64_linux/upx --best --lzma -o sing-box-mipsle-upx sing-box-mipsle || \
+            ./upx-${UPX_VERSION}-amd64_linux/upx --best -o sing-box-mipsle-upx sing-box-mipsle
+          mv sing-box-mipsle-upx sing-box-mipsle
+          ls -la sing-box-mipsle
+          echo "Compressed size: $(stat -c%s sing-box-mipsle) bytes"
+
+      - name: Create Release & Upload
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: sing-box-mipsle-${{ inputs.version }}
+          name: sing-box mipsle (trimmed+upx) ${{ inputs.version }}
+          files: sb/sing-box-mipsle
+          body: |
+            Trimmed sing-box for Phicomm K2 (mipsle softfloat).
+            All optional build tags disabled (no gvisor/quic/wireguard/tailscale/utls/acme/clash_api).
+            Compressed with upx. Supports vmess+ws, http, socks.
+            Pull this binary to /tmp on boot via the init script.

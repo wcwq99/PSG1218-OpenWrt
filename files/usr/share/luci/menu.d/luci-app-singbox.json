@@ -1,0 +1,14 @@
+{
+	"admin/services/singbox": {
+		"title": "sing-box 服务端",
+		"order": 90,
+		"action": {
+			"type": "view",
+			"path": "singbox"
+		},
+		"depends": {
+			"acl": [ "luci-app-singbox" ],
+			"fs": [ "/etc/init.d/sing-box" ]
+		}
+	}
+}

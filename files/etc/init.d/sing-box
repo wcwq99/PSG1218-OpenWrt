@@ -13,7 +13,9 @@ SB_CONF=/etc/sing-box/config.json
 SB_VERSION="1.13.15"
 # Repo owner/name - update if you rename the fork
 SB_REPO="wcwq99/PSG1218-OpenWrt"
-SB_URL="https://github.com/${SB_REPO}/releases/download/sing-box-mipsle-${SB_VERSION}/sing-box-mipsle"
+SB_BASE_URL="https://github.com/${SB_REPO}/releases/download/sing-box-mipsle-${SB_VERSION}/sing-box-mipsle"
+# GitHub download proxies in priority order; trailing empty string = direct fallback
+SB_PROXIES="https://proxy.wxgwxha.eu.org/ https://ghfast.top/ https://gh-proxy.com/ "
 
 boot() {
     start
@@ -27,25 +29,30 @@ download_sb() {
     fi
 
     echo "Downloading sing-box to /tmp ..."
-    if wget-ssl -q -O "$SB_BIN" "$SB_URL" 2>/dev/null; then
-        :
-    elif curl -sL -o "$SB_BIN" "$SB_URL" 2>/dev/null; then
-        :
-    else
-        echo "Download failed: $SB_URL"
-        echo "Run build-singbox.yml workflow first to publish the binary."
-        return 1
-    fi
-
-    if [ ! -s "$SB_BIN" ]; then
-        echo "Downloaded file is empty"
+    # Try each proxy prefix (proxy + full GitHub URL), then direct URL as fallback
+    for proxy in $SB_PROXIES; do
+        url="${proxy}${SB_BASE_URL}"
+        echo "  try: $url"
+        if wget-ssl -q -T 30 -O "$SB_BIN" "$url" 2>/dev/null && [ -s "$SB_BIN" ]; then
+            chmod +x "$SB_BIN"
+            echo "sing-box ready at $SB_BIN ($(wc -c < "$SB_BIN") bytes) via ${proxy}"
+            return 0
+        fi
         rm -f "$SB_BIN"
-        return 1
-    fi
+    done
 
-    chmod +x "$SB_BIN"
-    echo "sing-box ready at $SB_BIN ($(wc -c < "$SB_BIN") bytes)"
-    return 0
+    # Direct fallback (no proxy)
+    echo "  try direct: $SB_BASE_URL"
+    if wget-ssl -q -T 30 -O "$SB_BIN" "$SB_BASE_URL" 2>/dev/null && [ -s "$SB_BIN" ]; then
+        chmod +x "$SB_BIN"
+        echo "sing-box ready at $SB_BIN ($(wc -c < "$SB_BIN") bytes) via direct"
+        return 0
+    fi
+    rm -f "$SB_BIN"
+
+    echo "Download failed from all sources."
+    echo "Check proxy availability or run build-singbox.yml to publish the binary."
+    return 1
 }
 
 start_service() {

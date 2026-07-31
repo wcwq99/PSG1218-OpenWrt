@@ -24,39 +24,39 @@ boot() {
 download_sb() {
     mkdir -p "$SB_DIR"
     if [ -x "$SB_BIN" ]; then
-        echo "sing-box already in /tmp, skip download"
+        echo "sing-box 已存在于 /tmp,跳过下载"
         return 0
     fi
 
-    echo "Downloading sing-box to /tmp ..."
-    # Try each proxy prefix (proxy + full GitHub URL), then direct URL as fallback
+    echo "正在下载 sing-box 到 /tmp ..."
+    # 依次尝试代理前缀(代理 + 完整 GitHub URL),全部失败后回退直连
     for proxy in $SB_PROXIES; do
         url="${proxy}${SB_BASE_URL}"
-        echo "  try: $url"
+        echo "  尝试: $url"
         if wget-ssl -q -T 30 -O "$SB_BIN" "$url" 2>/dev/null && [ -s "$SB_BIN" ]; then
             chmod +x "$SB_BIN"
-            echo "sing-box ready at $SB_BIN ($(wc -c < "$SB_BIN") bytes) via ${proxy}"
+            echo "sing-box 下载成功: $SB_BIN ($(wc -c < "$SB_BIN") 字节),经由 ${proxy}"
             return 0
         fi
         rm -f "$SB_BIN"
     done
 
-    # Direct fallback (no proxy)
-    echo "  try direct: $SB_BASE_URL"
+    # 直连回退(无代理)
+    echo "  尝试直连: $SB_BASE_URL"
     if wget-ssl -q -T 30 -O "$SB_BIN" "$SB_BASE_URL" 2>/dev/null && [ -s "$SB_BIN" ]; then
         chmod +x "$SB_BIN"
-        echo "sing-box ready at $SB_BIN ($(wc -c < "$SB_BIN") bytes) via direct"
+        echo "sing-box 下载成功: $SB_BIN ($(wc -c < "$SB_BIN") 字节),经由直连"
         return 0
     fi
     rm -f "$SB_BIN"
 
-    echo "Download failed from all sources."
-    echo "Check proxy availability or run build-singbox.yml to publish the binary."
+    echo "所有下载源均失败。"
+    echo "请检查代理可用性,或先运行 build-singbox.yml 工作流发布二进制。"
     return 1
 }
 
 start_service() {
-    [ -f "$SB_CONF" ] || { echo "Config not found: $SB_CONF"; return 1; }
+    [ -f "$SB_CONF" ] || { echo "配置文件不存在: $SB_CONF"; return 1; }
 
     download_sb || return 1
 
@@ -66,7 +66,7 @@ start_service() {
     procd_set_param stderr 1
     procd_set_param respawn 300 5 10
     procd_close_instance
-    echo "sing-box started, config: $SB_CONF"
+    echo "sing-box 已启动,配置: $SB_CONF"
 }
 
 reload_service() {

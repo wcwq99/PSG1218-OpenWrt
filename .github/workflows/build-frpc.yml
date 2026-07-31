@@ -36,7 +36,7 @@ jobs:
           export GOOS=linux
           export GOARCH=mipsle
           export GOMIPS=softfloat
-          go build -trimpath -ldflags "-s -w" -o frpc-mipsle ./cmd/frpc
+          go build -trimpath -tags noweb -ldflags "-s -w" -o frpc-mipsle ./cmd/frpc
           file frpc-mipsle
           ls -la frpc-mipsle
           echo "Raw size: $(stat -c%s frpc-mipsle) bytes"

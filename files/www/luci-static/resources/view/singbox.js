@@ -131,6 +131,8 @@ return view.extend({
 		// 日志区
 		const logSection = E('fieldset', { class: 'cbi-section' });
 		logSection.appendChild(E('legend', _('运行日志')));
+		logSection.appendChild(E('p', { class: 'cbi-section-descr' },
+			_('日志写入 /var/log/sing-box.log(tmpfs,重启清空)。logrotate 每天轮转保留 3 份,超 1MB 也轮转。')));
 		const logText = (data.log && (data.log.stdout || data.log.stderr)) || _('暂无日志');
 		const logBox = E('pre', {
 			style: 'width:100%;height:240px;overflow:auto;background:#1e1e1e;color:#d4d4d4;padding:10px;font-family:monospace;font-size:12px;border-radius:4px;white-space:pre-wrap;'
@@ -145,7 +147,22 @@ return view.extend({
 				logBox.textContent = _('读取日志失败');
 			});
 		};
-		logSection.appendChild(E('div', {}, refreshBtn));
+
+		const clearBtn = E('button', { class: 'cbi-button cbi-button-reset', type: 'button', style: 'margin-top:8px;margin-left:8px' }, _('清空日志'));
+		clearBtn.onclick = () => {
+			if (!confirm(_('确认清空 sing-box 日志?'))) return;
+			fs.exec('/usr/bin/truncate', ['-s', '0', this.SB_LOG]).then(() => {
+				logBox.textContent = _('日志已清空');
+			}).catch(() => {
+				// truncate 不存在时用 echo 覆盖
+				fs.exec('/bin/sh', ['-c', '> ' + this.SB_LOG]).then(() => {
+					logBox.textContent = _('日志已清空');
+				}).catch(() => {
+					ui.addNotification(null, E('p', _('清空失败')));
+				});
+			});
+		};
+		logSection.appendChild(E('div', {}, [refreshBtn, clearBtn]));
 		viewEl.appendChild(logSection);
 
 		return viewEl;

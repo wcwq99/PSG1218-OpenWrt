@@ -1,0 +1,2 @@
+# sing-box 日志轮转:每天凌晨 3 点执行 logrotate
+0 3 * * * /usr/sbin/logrotate /etc/logrotate.d/sing-box

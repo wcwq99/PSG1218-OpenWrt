@@ -1,6 +1,7 @@
 {
   "log": {
     "level": "warn",
+    "output": "/var/log/sing-box.log",
     "timestamp": true
   },
   "inbounds": [

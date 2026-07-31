@@ -15,7 +15,10 @@
 		},
 		"write": {
 			"file": {
-				"/etc/sing-box/config.json": [ "write" ]
+				"/etc/sing-box/config.json": [ "write" ],
+				"/var/log/sing-box.log": [ "write" ],
+				"/usr/bin/truncate": [ "exec" ],
+				"/bin/sh": [ "exec" ]
 			}
 		}
 	}

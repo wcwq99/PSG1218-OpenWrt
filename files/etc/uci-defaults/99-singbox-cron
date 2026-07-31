@@ -1,0 +1,5 @@
+#!/bin/sh
+# 开机启用 cron,用于 sing-box 日志轮转定时任务
+/etc/init.d/cron enable 2>/dev/null
+/etc/init.d/cron start 2>/dev/null
+exit 0

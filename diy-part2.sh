@@ -13,6 +13,17 @@
 # 给自定义 init 脚本加执行权限(git 不保留可执行位)
 # diy-part2 在 cd openwrt 后执行,files 已移至 openwrt/files
 chmod +x files/etc/init.d/sing-box 2>/dev/null || true
+chmod +x files/etc/init.d/frpc 2>/dev/null || true
+chmod +x files/usr/bin/frpc 2>/dev/null || true
+
+# Patch frpc 包:跳过 17MB Go 二进制安装,改用内存拉取 wrapper
+# 保留 init/config/uci-defaults 让 luci-app-frpc 正常工作,二进制走 /tmp
+FRP_MK=feeds/packages/net/frp/Makefile
+if [ -f "$FRP_MK" ]; then
+    # 注释掉二进制安装行,保留其余(init/config/uci-defaults)
+    sed -i 's|^\t$(INSTALL_BIN) \$$(GO_PKG_BUILD_BIN_DIR)/\$$(2) \$$(1)/usr/bin/|\t# \\t disabled: 17MB Go binary, use /tmp wrapper instead|' "$FRP_MK"
+    echo "[diy-part2] patched frp Makefile: skip binary install, use wrapper"
+fi
 
 # Modify default IP
 #sed -i 's/192.168.1.1/192.168.50.5/g' package/base-files/files/bin/config_generate

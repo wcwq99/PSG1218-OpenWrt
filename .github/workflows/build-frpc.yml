@@ -1,0 +1,63 @@
+name: Build frpc (mipsle, upx)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'frp version (e.g. 0.70.1)'
+        required: true
+        default: '0.70.1'
+
+env:
+  GO_VERSION: '1.23'
+  UPX_VERSION: '4.2.4'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Checkout frp source
+        run: |
+          git clone --depth 1 --branch v${{ inputs.version }} https://github.com/fatedier/frp.git frp
+          cd frp
+
+      - name: Build frpc mipsle
+        run: |
+          cd frp
+          export CGO_ENABLED=0
+          export GOOS=linux
+          export GOARCH=mipsle
+          export GOMIPS=softfloat
+          go build -trimpath -ldflags "-s -w" -o frpc-mipsle ./cmd/frpc
+          file frpc-mipsle
+          ls -la frpc-mipsle
+          echo "Raw size: $(stat -c%s frpc-mipsle) bytes"
+
+      - name: Compress with upx
+        run: |
+          cd frp
+          wget -q https://github.com/upx/upx/releases/download/v${UPX_VERSION}/upx-${UPX_VERSION}-amd64_linux.tar.xz
+          tar xf upx-${UPX_VERSION}-amd64_linux.tar.xz
+          ./upx-${UPX_VERSION}-amd64_linux/upx --best --lzma -o frpc-mipsle-upx frpc-mipsle || \
+            ./upx-${UPX_VERSION}-amd64_linux/upx --best -o frpc-mipsle-upx frpc-mipsle
+          mv frpc-mipsle-upx frpc-mipsle
+          ls -la frpc-mipsle
+          echo "Compressed size: $(stat -c%s frpc-mipsle) bytes"
+
+      - name: Create Release & Upload
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: frpc-mipsle-${{ inputs.version }}
+          name: frpc mipsle (upx) ${{ inputs.version }}
+          files: frp/frpc-mipsle
+          body: |
+            frpc client for Phicomm K2 (mipsle softfloat).
+            Compressed with upx. Pull to /tmp on boot via init script.

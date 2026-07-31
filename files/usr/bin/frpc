@@ -1,0 +1,33 @@
+#!/bin/sh
+# frpc wrapper: 真二进制走 /tmp 内存拉取,此脚本透明转发所有参数
+# frpc 包的 init 脚本 PROG=/usr/bin/frpc 调用本脚本
+
+FRPC_REAL=/tmp/frpc/frpc
+FRPC_DIR=/tmp/frpc
+FRPC_VERSION="0.70.1"
+FRPC_REPO="wcwq99/PSG1218-OpenWrt"
+FRPC_BASE_URL="https://github.com/${FRPC_REPO}/releases/download/frpc-mipsle-${FRPC_VERSION}/frpc-mipsle"
+FRPC_PROXIES="https://proxy.wxgwxha.eu.org/ https://ghfast.top/ https://gh-proxy.com/ "
+
+ensure_binary() {
+    [ -x "$FRPC_REAL" ] && return 0
+    mkdir -p "$FRPC_DIR"
+    for proxy in $FRPC_PROXIES; do
+        url="${proxy}${FRPC_BASE_URL}"
+        if wget -q -T 30 -O "$FRPC_REAL" "$url" 2>/dev/null && [ -s "$FRPC_REAL" ]; then
+            chmod +x "$FRPC_REAL"
+            return 0
+        fi
+        rm -f "$FRPC_REAL"
+    done
+    wget -q -T 30 -O "$FRPC_REAL" "$FRPC_BASE_URL" 2>/dev/null && [ -s "$FRPC_REAL" ] && {
+        chmod +x "$FRPC_REAL"
+        return 0
+    }
+    rm -f "$FRPC_REAL"
+    echo "frpc 二进制下载失败,请先运行 build-frpc.yml 工作流" >&2
+    return 1
+}
+
+ensure_binary || exit 1
+exec "$FRPC_REAL" "$@"

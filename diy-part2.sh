@@ -25,14 +25,17 @@ if [ -f "$FRP_MK" ]; then
     # 真实行: \t$(INSTALL_BIN) $(GO_PKG_BUILD_BIN_DIR)/$(2) $(1)/usr/bin/
     sed -i 's|^\t$(INSTALL_BIN) $(GO_PKG_BUILD_BIN_DIR)/$(2) $(1)/usr/bin/|\t# disabled: 17MB Go binary, use /tmp wrapper instead|' "$FRP_MK"
     # 2) 覆盖 Build/Compile,跳过 Go 编译
-    #    golang-package.mk 把 Build/Compile 设为调用 golang-build.sh build,
+    #    golang-package.mk(L299) 把 Build/Compile 设为 $(call GoPackage/Build/Compile),
+    #    后者在 .built recipe 里调用 golang-build.sh build 触发 go build。
     #    Namespace runner 上 Go module 下载不完整会导致编译失败。
+    #    关键时序:Build/Compile 必须在 $(eval $(call BuildPackage,...)) 之前覆盖,
+    #    因为 eval 会把 $(Build/Compile) 冻结进 recipe;append 到文件末尾太晚无效。
+    #    故用 sed 在 include golang-package.mk 行之后插入,确保先于 eval 生效。
     #    frp 二进制走 /tmp wrapper,编译时不需要构建 Go 产物。
-    #    用变量式覆盖(=),在 include golang-package.mk 之后生效,使其变空。
-    if ! grep -q 'Build/Compile =' "$FRP_MK"; then
-        printf '\n# skip Go build, binary provided via /tmp wrapper at runtime\nBuild/Compile = true\n' >> "$FRP_MK"
+    if ! grep -q 'Build/Compile = true' "$FRP_MK"; then
+        sed -i '/^include \.\.\/\.\.\/lang\/golang\/golang-package\.mk/a Build/Compile = true  # skip Go build, binary via /tmp wrapper at runtime' "$FRP_MK"
     fi
-    grep -q "use /tmp wrapper instead" "$FRP_MK" \
+    grep -q "Build/Compile = true" "$FRP_MK" \
         && echo "[diy-part2] patched frp Makefile: skip binary install + Go build, use wrapper" \
         || echo "[diy-part2] WARNING: frp Makefile patch NOT applied, check pattern!"
 fi

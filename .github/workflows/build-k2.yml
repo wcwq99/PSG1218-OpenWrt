@@ -64,6 +64,17 @@ jobs:
         git clone $REPO_URL -b $REPO_BRANCH openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
 
+    - name: Cache build artifacts
+      uses: actions/cache@v4
+      with:
+        path: |
+          openwrt/build_dir
+          openwrt/staging_dir
+          openwrt/dl
+        key: k2-build-${{ hashFiles('k2.config', 'diy-part1.sh', 'diy-part2.sh') }}
+        restore-keys: |
+          k2-build-
+
     - name: Load custom feeds
       run: |
         [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
@@ -105,8 +116,8 @@ jobs:
       id: compile
       run: |
         cd openwrt
-        echo -e "$(nproc) thread compile"
-        make -j$(nproc) || make -j1 || make -j1 V=s
+        echo -e "$(nproc) thread compile (using $(($(nproc)-1)) jobs to avoid OOM)"
+        make -j$(($(nproc)-1)) || make -j$(($(nproc)-1)) V=sc 2>&1 | tail -100
         echo "::set-output name=status::success"
         grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
         [ -s DEVICE_NAME ] && echo "DEVICE_NAME=_$(cat DEVICE_NAME)" >> $GITHUB_ENV

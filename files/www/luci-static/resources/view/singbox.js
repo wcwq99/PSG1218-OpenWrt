@@ -15,13 +15,12 @@ const callServiceList = rpc.declare({
 return view.extend({
 	SB_INIT: '/etc/init.d/sing-box',
 	SB_CONF: '/etc/sing-box/config.json',
-	SB_LOG: '/var/log/sing-box.log',
 
 	load() {
 		return Promise.all([
 			L.resolveDefault(callServiceList('sing-box'), {}),
 			L.resolveDefault(fs.read_direct(this.SB_CONF), ''),
-			L.resolveDefault(fs.exec('/bin/cat', [this.SB_LOG]), {})
+			L.resolveDefault(fs.exec('/sbin/logread', ['-e', 'sing-box']), {})
 		]).then(([status, conf, log]) => {
 			return { status: status, conf: conf, log: log };
 		});
@@ -132,7 +131,7 @@ return view.extend({
 		const logSection = E('fieldset', { class: 'cbi-section' });
 		logSection.appendChild(E('legend', _('运行日志')));
 		logSection.appendChild(E('p', { class: 'cbi-section-descr' },
-			_('日志写入 /var/log/sing-box.log(tmpfs,重启清空)。logrotate 每天轮转保留 3 份,超 1MB 也轮转。')));
+			_('日志由系统 logd 环形缓冲区管理,大小受限且重启自动清空。')));
 		const logText = (data.log && (data.log.stdout || data.log.stderr)) || _('暂无日志');
 		const logBox = E('pre', {
 			style: 'width:100%;height:240px;overflow:auto;background:#1e1e1e;color:#d4d4d4;padding:10px;font-family:monospace;font-size:12px;border-radius:4px;white-space:pre-wrap;'
@@ -141,23 +140,13 @@ return view.extend({
 
 		const refreshBtn = E('button', { class: 'cbi-button', type: 'button', style: 'margin-top:8px' }, _('刷新日志'));
 		refreshBtn.onclick = () => {
-			fs.exec('/bin/cat', [this.SB_LOG]).then(res => {
+			fs.exec('/sbin/logread', ['-e', 'sing-box']).then(res => {
 				logBox.textContent = (res && (res.stdout || res.stderr)) || _('暂无日志');
 			}).catch(() => {
 				logBox.textContent = _('读取日志失败');
 			});
 		};
-
-		const clearBtn = E('button', { class: 'cbi-button cbi-button-reset', type: 'button', style: 'margin-top:8px;margin-left:8px' }, _('清空日志'));
-		clearBtn.onclick = () => {
-			if (!confirm(_('确认清空 sing-box 日志?'))) return;
-			fs.exec('/usr/bin/truncate', ['-s', '0', this.SB_LOG]).then(() => {
-				logBox.textContent = _('日志已清空');
-			}).catch(() => {
-				ui.addNotification(null, E('p', _('清空失败')));
-			});
-		};
-		logSection.appendChild(E('div', {}, [refreshBtn, clearBtn]));
+		logSection.appendChild(E('div', {}, refreshBtn));
 		viewEl.appendChild(logSection);
 
 		return viewEl;

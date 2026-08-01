@@ -8,16 +8,13 @@
 			"file": {
 				"/etc/init.d/sing-box": [ "exec" ],
 				"/etc/sing-box/config.json": [ "read" ],
-				"/var/log/sing-box.log": [ "read" ],
 				"/tmp/sing-box/sing-box": [ "exec" ],
-				"/bin/cat": [ "exec" ]
+				"/sbin/logread": [ "exec" ]
 			}
 		},
 		"write": {
 			"file": {
-				"/etc/sing-box/config.json": [ "write" ],
-				"/var/log/sing-box.log": [ "write" ],
-				"/usr/bin/truncate": [ "exec" ]
+				"/etc/sing-box/config.json": [ "write" ]
 			}
 		}
 	}

@@ -1,0 +1,12 @@
+#!/bin/sh
+
+CRONTAB=/etc/crontabs/root
+if [ -f "$CRONTAB" ]; then
+    sed -i \
+        -e '\|^0 3 \* \* \* /usr/sbin/logrotate -s /tmp/logrotate\.status /etc/logrotate\.d/sing-box$|d' \
+        -e '\|^0 3 \* \* \* /usr/sbin/logrotate /etc/logrotate\.d/sing-box$|d' \
+        "$CRONTAB"
+fi
+
+rm -f /etc/logrotate.d/sing-box
+exit 0

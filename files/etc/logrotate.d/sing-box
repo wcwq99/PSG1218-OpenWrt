@@ -1,9 +1,0 @@
-/var/log/sing-box.log {
-    daily
-    rotate 3
-    size 1M
-    compress
-    copytruncate
-    missingok
-    notifempty
-}

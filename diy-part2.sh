@@ -16,6 +16,7 @@ set -euo pipefail
 chmod +x files/etc/init.d/sing-box 2>/dev/null || true
 chmod +x files/etc/init.d/frpc 2>/dev/null || true
 chmod +x files/usr/bin/frpc 2>/dev/null || true
+chmod +x files/etc/uci-defaults/99-cleanup-singbox-logrotate 2>/dev/null || true
 
 # Patch frp 包:跳过 17MB Go 二进制编译与安装,改用内存拉取 wrapper
 # 保留 init/config/uci-defaults 让 luci-app-frpc 正常工作,二进制走 /tmp

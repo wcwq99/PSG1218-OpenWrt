@@ -1,31 +1,52 @@
 #!/bin/sh
-# frpc wrapper: 真二进制走 /tmp 内存拉取,此脚本透明转发所有参数
-# frpc 包的 init 脚本 PROG=/usr/bin/frpc 调用本脚本
+# frpc wrapper: verified binary runs from /tmp and receives all original args.
 
 FRPC_REAL=/tmp/frpc/frpc
 FRPC_DIR=/tmp/frpc
 FRPC_VERSION="0.70.1"
+FRPC_SHA256="a1c2d6ad7efb93525f258c6e377f3bfc47221ab728c2dec546889cddcdae2c56"
 FRPC_REPO="wcwq99/PSG1218-OpenWrt"
 FRPC_BASE_URL="https://github.com/${FRPC_REPO}/releases/download/frpc-mipsle-${FRPC_VERSION}/frpc-mipsle"
 FRPC_PROXIES="https://proxy.wxgwxha.eu.org/ https://ghfast.top/ https://gh-proxy.com/ "
 
+verify_frpc() {
+    [ -f "$1" ] && [ ! -L "$1" ] || return 1
+    printf '%s  %s\n' "$FRPC_SHA256" "$1" | sha256sum -c - >/dev/null 2>&1
+}
+
 ensure_binary() {
-    [ -x "$FRPC_REAL" ] && return 0
-    mkdir -p "$FRPC_DIR"
+    umask 077
+    mkdir -p "$FRPC_DIR" || return 1
+    chmod 0700 "$FRPC_DIR" || return 1
+
+    if verify_frpc "$FRPC_REAL"; then
+        chmod 0700 "$FRPC_REAL"
+        return 0
+    fi
+    rm -f "$FRPC_REAL"
+
+    tmp=$(mktemp "$FRPC_DIR/.download.XXXXXX") || return 1
+    trap 'rm -f "$tmp"' EXIT HUP INT TERM
+
     for proxy in $FRPC_PROXIES; do
         url="${proxy}${FRPC_BASE_URL}"
-        if wget -q -T 30 -O "$FRPC_REAL" "$url" 2>/dev/null && [ -s "$FRPC_REAL" ]; then
-            chmod +x "$FRPC_REAL"
+        if wget -q -T 30 -O "$tmp" "$url" 2>/dev/null && verify_frpc "$tmp"; then
+            chmod 0700 "$tmp" && mv -f "$tmp" "$FRPC_REAL"
+            trap - EXIT HUP INT TERM
             return 0
         fi
-        rm -f "$FRPC_REAL"
+        : > "$tmp"
     done
-    wget -q -T 30 -O "$FRPC_REAL" "$FRPC_BASE_URL" 2>/dev/null && [ -s "$FRPC_REAL" ] && {
-        chmod +x "$FRPC_REAL"
+
+    if wget -q -T 30 -O "$tmp" "$FRPC_BASE_URL" 2>/dev/null && verify_frpc "$tmp"; then
+        chmod 0700 "$tmp" && mv -f "$tmp" "$FRPC_REAL"
+        trap - EXIT HUP INT TERM
         return 0
-    }
-    rm -f "$FRPC_REAL"
-    echo "frpc 二进制下载失败,请先运行 build-frpc.yml 工作流" >&2
+    fi
+
+    rm -f "$tmp"
+    trap - EXIT HUP INT TERM
+    echo "frpc 二进制下载失败或 SHA-256 校验不通过,请先运行 build-frpc.yml 工作流" >&2
     return 1
 }
 

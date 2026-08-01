@@ -154,12 +154,7 @@ return view.extend({
 			fs.exec('/usr/bin/truncate', ['-s', '0', this.SB_LOG]).then(() => {
 				logBox.textContent = _('日志已清空');
 			}).catch(() => {
-				// truncate 不存在时用 echo 覆盖
-				fs.exec('/bin/sh', ['-c', '> ' + this.SB_LOG]).then(() => {
-					logBox.textContent = _('日志已清空');
-				}).catch(() => {
-					ui.addNotification(null, E('p', _('清空失败')));
-				});
+				ui.addNotification(null, E('p', _('清空失败')));
 			});
 		};
 		logSection.appendChild(E('div', {}, [refreshBtn, clearBtn]));

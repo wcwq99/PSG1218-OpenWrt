@@ -30,7 +30,7 @@ ensure_binary() {
 
     for proxy in $FRPC_PROXIES; do
         url="${proxy}${FRPC_BASE_URL}"
-        if wget -q -T 30 -O "$tmp" "$url" 2>/dev/null && verify_frpc "$tmp"; then
+        if uclient-fetch -q --timeout=30 -O "$tmp" "$url" 2>/dev/null && verify_frpc "$tmp"; then
             chmod 0700 "$tmp" && mv -f "$tmp" "$FRPC_REAL"
             trap - EXIT HUP INT TERM
             return 0
@@ -38,7 +38,7 @@ ensure_binary() {
         : > "$tmp"
     done
 
-    if wget -q -T 30 -O "$tmp" "$FRPC_BASE_URL" 2>/dev/null && verify_frpc "$tmp"; then
+    if uclient-fetch -q --timeout=30 -O "$tmp" "$FRPC_BASE_URL" 2>/dev/null && verify_frpc "$tmp"; then
         chmod 0700 "$tmp" && mv -f "$tmp" "$FRPC_REAL"
         trap - EXIT HUP INT TERM
         return 0

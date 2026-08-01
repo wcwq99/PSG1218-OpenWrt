@@ -42,7 +42,7 @@ download_sb() {
     for proxy in $SB_PROXIES; do
         url="${proxy}${SB_BASE_URL}"
         echo "  尝试: $url"
-        if wget -q -T 30 -O "$tmp" "$url" 2>/dev/null && verify_sb "$tmp"; then
+        if uclient-fetch -q --timeout=30 -O "$tmp" "$url" 2>/dev/null && verify_sb "$tmp"; then
             chmod 0700 "$tmp" && mv -f "$tmp" "$SB_BIN"
             trap - EXIT HUP INT TERM
             echo "sing-box 下载并校验成功,经由 ${proxy}"
@@ -52,7 +52,7 @@ download_sb() {
     done
 
     echo "  尝试直连: $SB_BASE_URL"
-    if wget -q -T 30 -O "$tmp" "$SB_BASE_URL" 2>/dev/null && verify_sb "$tmp"; then
+    if uclient-fetch -q --timeout=30 -O "$tmp" "$SB_BASE_URL" 2>/dev/null && verify_sb "$tmp"; then
         chmod 0700 "$tmp" && mv -f "$tmp" "$SB_BIN"
         trap - EXIT HUP INT TERM
         echo "sing-box 下载并校验成功,经由直连"
